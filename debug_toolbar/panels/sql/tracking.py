@@ -29,6 +29,8 @@ except ImportError:
 # additional queries.
 allow_sql = contextvars.ContextVar("debug-toolbar-allow-sql", default=True)
 
+record_sql = contextvars.ContextVar("debug-toolbar-record-sql", default=True)
+
 
 DDT_MODELS = {
     m._meta.db_table for m in apps.get_app_config("debug_toolbar").get_models()
@@ -151,6 +153,9 @@ class NormalCursorMixin(DjDTCursorWrapperMixin):
             self.db._djdt_logger = self.logger
 
     def _record(self, method, sql, params):
+        if not record_sql.get():
+            return method(sql, params)
+
         alias = self.db.alias
         vendor = self.db.vendor
 

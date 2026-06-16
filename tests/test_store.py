@@ -433,19 +433,15 @@ class CacheStoreWithDatabaseBackendTestCase(CommonStoreTestsMixin, TestCase):
             self.store.panels("test_req")
             self.store.delete("test_req")
 
-            # Verify that no SQL queries to the cache table were recorded
-            # All CacheStore DatabaseCache operations should be invisible to the SQLPanel
-            cache_queries = [
-                q
-                for q in sql_panel._queries[initial_query_count:]
-                if "test_cache_store_table" in q.get("sql", "").lower()
-            ]
+            # All CacheStore DatabaseCache operations should be invisible to the SQLPanel,
+            # including transaction statements that do not name the cache table.
+            cache_queries = sql_panel._queries[initial_query_count:]
 
             self.assertEqual(
                 len(cache_queries),
                 0,
-                f"CacheStore DatabaseCache operations should not be tracked by SQLPanel, "
-                f"but found {len(cache_queries)} queries to 'test_cache_store_table' table",
+                "CacheStore DatabaseCache operations should not be tracked by SQLPanel, "
+                f"but found {len(cache_queries)} queries",
             )
         finally:
             sql_panel.disable_instrumentation()

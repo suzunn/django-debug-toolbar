@@ -242,9 +242,17 @@ class _UntrackedCache:
         def untracked(*args, **kwargs):
             panel = getattr(self._cache, "_djdt_panel", None)
             self._cache._djdt_panel = None
+            token = None
+            if dt_settings.get_config()["SKIP_TOOLBAR_QUERIES"]:
+                # Import lazily to avoid a store.py -> tracking.py -> toolbar.py cycle.
+                from debug_toolbar.panels.sql import tracking
+
+                token = tracking.record_sql.set(False)
             try:
                 return attr(*args, **kwargs)
             finally:
+                if token is not None:
+                    tracking.record_sql.reset(token)
                 self._cache._djdt_panel = panel
 
         return untracked
